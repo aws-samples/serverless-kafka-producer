@@ -1,18 +1,9 @@
 
-# Welcome to your CDK Python project!
+# Apache Kafka publisher CDK Code
 
-This is cdk application deploying a demo infrastructure as depicted in that blog entry:
+This example walks you through how to build a serverless real-time stream producer application using Amazon API Gateway and AWS Lambda. 
+For testing, this blog includes a sample AWS Cloud Development Kit (CDK) application. This creates a demo environment, including an Amazon Managed Streaming for Apache Kafka (MSK) cluster and a bastion host for observing the produced messages on the cluster.
 
-This example walks you through how to build a serverless real-time stream
-producer application using Amazon API Gateway and AWS Lambda.
-For testing, this blog includes a sample AWS Cloud Development Kit (CDK)
-application. This creates a demo environment including an Amazon Managed
-Streaming for Apache Kafka (MSK) cluster and a bastion host for observing the
-produced messages on the cluster.
-You deploy a serverless Kafka producer to Lambda that forwards API Gateway
-calls to a Kafka topic (on an Amazon Managed Streaming for Apache Kafka
-(MSK) cluster). The API Gateway calls are sent via Amazon Kinesis data stream,
-which acts as a control plane, to control throughput, latency and concurrency.
 
 ![image info](./img/Architecture.drawio.png)
 
