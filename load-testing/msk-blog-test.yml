@@ -1,0 +1,28 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
+
+config:
+  target: '<Your URL goes here>'
+  plugins:
+    faker:
+      locale: en
+  variables:
+    firstName: "$faker.name.firstName"
+  phases:
+    - duration: 120
+      arrivalRate: 10
+      maxVusers: 100
+      name: Warm up
+    - duration: 300
+      arrivalRate: 60
+      maxVusers: 1000
+      name: Heavy load
+scenarios:
+  - name: "test"
+    flow:
+      - post:
+          url: "/record/"
+          json:
+              {
+                "data": "{{firstName}}",
+              }

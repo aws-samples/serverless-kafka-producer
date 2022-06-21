@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration packages="com.amazonaws.services.lambda.runtime.log4j2">
+    <Appenders>
+        <Console name="JsonAppender" target="SYSTEM_OUT">
+            <JsonTemplateLayout eventTemplateUri="classpath:LambdaJsonLayout.json" />
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Logger name="JsonLogger" level="INFO" additivity="false">
+            <AppenderRef ref="JsonAppender"/>
+        </Logger>
+        <Root level="info">
+            <AppenderRef ref="JsonAppender"/>
+        </Root>
+        <Logger name="software.amazon.awssdk" level="WARN" />
+        <Logger name="software.amazon.awssdk.request" level="INFO" />
+        <Logger name="org.apache.kafka" level="WARN"/>
+        <Logger name="org.apache.kafka.clients" level="WARN" />
+        <Logger name="org.apache.zookeeper" level="WARN" />
+        <Logger name="org.apache.kafka.clients.NetworkClient" level="WARN" />
+    </Loggers>
+</Configuration>
