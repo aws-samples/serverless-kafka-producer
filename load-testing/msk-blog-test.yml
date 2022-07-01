@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT-0
 
 config:
-  target: '<Your URL goes here>'
+  target: '<Your URL goes here> WITHOUT THE PROD PART' 
   plugins:
     faker:
       locale: en
@@ -11,18 +11,11 @@ config:
   phases:
     - duration: 120
       arrivalRate: 10
-      maxVusers: 100
-      name: Warm up
-    - duration: 300
-      arrivalRate: 60
-      maxVusers: 1000
-      name: Heavy load
+      maxVusers: 60
+      name: Load Test
 scenarios:
   - name: "test"
     flow:
       - post:
-          url: "/record/"
-          json:
-              {
-                "data": "{{firstName}}",
-              }
+          url: "/prod"
+          body: "{firstName}"
