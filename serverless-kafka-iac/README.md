@@ -9,6 +9,8 @@ For testing, this blog includes a sample AWS Cloud Development Kit (CDK) applica
 
 This repository will contains the cdk code required to deploy the application.
 
+## Getting started...
+
 Configure environment variables
 
 ```
