@@ -9,6 +9,15 @@ For testing, this blog includes a sample AWS Cloud Development Kit (CDK) applica
 
 This repository will contains the cdk code required to deploy the application.
 
+Configure environment variables
+
+```
+export CDK_DEFAULT_ACCOUNT=$(aws sts get-caller-identity --query 'Account' --output text)
+export CDK_DEFAULT_REGION=$(aws configure get region)
+```
+
+Create a python virtual environment
+
 ```
 $ python3 -m venv .venv
 ```
@@ -35,8 +44,46 @@ $ cdk synth
 ```
 Run ‘cdk deploy’ to deploy the code to your AWS account
 ```
-$ cdk deploy
+$ cdk deploy --all
 ```
+
+Testing the example
+
+To test the example, we will log into the bastion host and start a consumer console, which we can use to observe the messages being added to the topic. Then we will generate messages for the Kafka topics by sending calls through the API Gateway from our development machine or AWS Cloud9 environment.
+
+Use AWS System Manager to log into the bastion host. Use the KafkaDemoBackendStack.bastionhostbastion Output-Parameter to connect.
+```
+aws ssm start-session --target <Bastion Host Instance Id> 
+sudo su ec2-user
+cd /home/ec2-user/kafka_2.13-2.6.3/bin/
+```
+
+Create a topic named messages on the MSK cluster:
+```
+./kafka-topics.sh --bootstrap-server $ZK --command-config client.properties --create --replication-factor 3 --partitions 3 --topic messages
+```
+
+Open a Kafka consumer console on the bastion host to observe incoming messages:
+```
+./kafka-console-consumer.sh --bootstrap-server $ZK --topic messages --consumer.config client.properties
+```
+
+Open another terminal on your development machine to create test requests using the “ServerlessKafkaProducerStack.kafkaproxyapiEndpoint” output parameter of the CDK stack. Use curl to send the API request: 
+```
+curl -X POST -d “Hello World” <ServerlessKafkaProducerStack.messagesapiendpointEndpoint>
+```
+
+For load testing the application, which is important to calibrate the parameters, you can go with a tool like Artillery to simulate workloads. You can find a sample artillery script in the /load-testing folder you previously checked out in step 1.
+Observe the incoming request in the bastion host terminal.
+
+Cleaning up
+Within the subdirectory “serverless-kafka-iac”, delete the test infrastructure:
+```
+cdk destroy –all 
+```
+
+
+
 
 ## Useful commands
 
