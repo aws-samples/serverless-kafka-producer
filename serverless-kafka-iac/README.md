@@ -77,6 +77,7 @@ For load testing the application, which is important to calibrate the parameters
 Observe the incoming request in the bastion host terminal.
 
 Cleaning up
+
 Within the subdirectory “serverless-kafka-iac”, delete the test infrastructure:
 ```
 cdk destroy –all 
