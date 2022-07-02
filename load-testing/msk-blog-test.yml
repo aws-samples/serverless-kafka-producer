@@ -1,0 +1,21 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
+
+config:
+  target: '<Your URL goes here> WITHOUT THE PROD PART' 
+  plugins:
+    faker:
+      locale: en
+  variables:
+    firstName: "$faker.name.firstName"
+  phases:
+    - duration: 120
+      arrivalRate: 10
+      maxVusers: 60
+      name: Load Test
+scenarios:
+  - name: "test"
+    flow:
+      - post:
+          url: "/prod"
+          body: "{firstName}"

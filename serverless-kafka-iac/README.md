@@ -1,19 +1,15 @@
+
 # Apache Kafka publisher CDK Code
 
 This example walks you through how to build a serverless real-time stream producer application using Amazon API Gateway and AWS Lambda. 
 For testing, this blog includes a sample AWS Cloud Development Kit (CDK) application. This creates a demo environment, including an Amazon Managed Streaming for Apache Kafka (MSK) cluster and a bastion host for observing the produced messages on the cluster.
 
 
-![image info](./serverless-kafka-iac/img/Architecture.drawio.png)
+![image info](./img/Architecture.drawio.png)
 
 This repository will contains the cdk code required to deploy the application.
 
 ## Getting started...
-
-Change current directory to subdirectory “serverless-kafka-iac”
-```
-cd serverless-kafka-iac
-```
 
 Configure environment variables
 
@@ -100,12 +96,3 @@ cdk destroy –all
  * `cdk docs`        open CDK documentation
 
 Enjoy!
-
-## Security
-
-See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
-
-## License
-
-This library is licensed under the MIT-0 License. See the LICENSE file.
-
