@@ -49,7 +49,7 @@ Run ‘cdk deploy’ to deploy the code to your AWS account
 $ cdk deploy --all
 ```
 
-Testing the example
+## Testing the example
 
 To test the example, we will log into the bastion host and start a consumer console, which we can use to observe the messages being added to the topic. Then we will generate messages for the Kafka topics by sending calls through the API Gateway from our development machine or AWS Cloud9 environment.
 
@@ -78,14 +78,12 @@ curl -X POST -d “Hello World” <ServerlessKafkaProducerStack.messagesapiendpo
 For load testing the application, which is important to calibrate the parameters, you can go with a tool like Artillery to simulate workloads. You can find a sample artillery script in the /load-testing folder you previously checked out in step 1.
 Observe the incoming request in the bastion host terminal.
 
-Cleaning up
+## Cleaning up
 
 Within the subdirectory “serverless-kafka-iac”, delete the test infrastructure:
 ```
 cdk destroy –all 
 ```
-
-
 
 
 ## Useful commands
