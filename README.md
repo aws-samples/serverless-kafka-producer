@@ -57,7 +57,8 @@ $ cdk deploy --all
 
 To test the example, we will log into the bastion host and start a consumer console, which we can use to observe the messages being added to the topic. Then we will generate messages for the Kafka topics by sending calls through the API Gateway from our development machine or AWS Cloud9 environment.
 
-Use AWS System Manager to log into the bastion host. Use the KafkaDemoBackendStack.bastionhostbastion Output-Parameter to connect.
+Use AWS System Manager to log into the bastion host. See https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html for details regarding installing and using the CDK SSM plugin)
+Use the KafkaDemoBackendStack.bastionhostbastion Output-Parameter to connect.
 ```
 aws ssm start-session --target <Bastion Host Instance Id> 
 sudo su ec2-user
