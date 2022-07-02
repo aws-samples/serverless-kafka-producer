@@ -4,7 +4,7 @@ This example walks you through how to build a serverless real-time stream produc
 For testing, this blog includes a sample AWS Cloud Development Kit (CDK) application. This creates a demo environment, including an Amazon Managed Streaming for Apache Kafka (MSK) cluster and a bastion host for observing the produced messages on the cluster.
 
 
-![image info](./img/Architecture.drawio.png)
+![image info](./serverless-kafka-iac/img/Architecture.drawio.png)
 
 This repository will contains the cdk code required to deploy the application.
 
