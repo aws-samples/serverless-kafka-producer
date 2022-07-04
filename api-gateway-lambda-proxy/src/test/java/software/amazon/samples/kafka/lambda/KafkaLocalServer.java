@@ -3,19 +3,25 @@
 
 package software.amazon.samples.kafka.lambda;
 
+import kafka.metrics.KafkaMetricsReporter;
 import kafka.server.KafkaConfig;
-import kafka.server.KafkaServerStartable;
+import kafka.server.KafkaServer;
 import org.apache.curator.test.TestingServer;
+import org.apache.kafka.common.utils.Time;
 import org.junit.rules.ExternalResource;
+import scala.Some;
+import scala.collection.mutable.Buffer;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 class KafkaLocalServer extends ExternalResource {
 
     private TestingServer testingServer;
-    private KafkaServerStartable kafka;
+    private KafkaServer kafka;
     private File tmpFolder;
     private int port;
 
@@ -36,8 +42,12 @@ class KafkaLocalServer extends ExternalResource {
         props.setProperty("log.dirs", tmpFolder.getPath());
         KafkaConfig kafkaConfig = new KafkaConfig(props);
 
-        kafka = new KafkaServerStartable(kafkaConfig);
+        List<KafkaMetricsReporter> metrics          = new ArrayList<>();
+        Buffer<KafkaMetricsReporter> metricsReporters = scala.collection.JavaConversions.asScalaBuffer(metrics);
+
+        kafka = new KafkaServer(kafkaConfig, Time.SYSTEM, new Some<String>("test-server"), metricsReporters);
         kafka.startup();
+
 
     }
 
