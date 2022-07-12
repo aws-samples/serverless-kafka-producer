@@ -18,9 +18,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./api-gateway-lambda-proxy
     steps:
     - uses: actions/checkout@v3
       with:
@@ -34,4 +31,4 @@ jobs:
         distribution: 'temurin'
         cache: maven
     - name: Build with Maven
-      run: mvn -B package --file pom.xml
+      run: api-gateway-lambda-proxy/mvn -B package --file ./api-gateway-lambda-proxy/pom.xml
