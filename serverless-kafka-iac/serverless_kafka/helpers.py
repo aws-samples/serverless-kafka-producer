@@ -7,6 +7,9 @@ Topic 	        arn:aws:kafka:region:account-id:topic/cluster-name/cluster-uuid/t
 Group 	        arn:aws:kafka:region:account-id:group/cluster-name/cluster-uuid/group-name
 Transaction ID 	arn:aws:kafka:region:account-id:transactional-id/cluster-name/cluster-uuid/transactional-id
 """
+from typing import List
+from typing import Tuple
+
 from aws_cdk import Arn as arn
 from aws_cdk import ArnFormat as af
 from aws_cdk import Fn as fn
@@ -14,12 +17,13 @@ from aws_cdk import aws_ec2 as ec2
 from constructs import Node
 
 
-def allow_tcp_ports_to_internally (connection:ec2.Connections, ports:list[tuple[int, str]]):
+def allow_tcp_ports_to_internally (connection:ec2.Connections, ports:List[Tuple[int, str]]):
 
     for port in ports:
         connection.allow_internally(ec2.Port.tcp(port=port[0]), description=port[1])
 
     return 
+
 
 def get_paramter(node: Node, parameter_name: str, default_value=None):
     return_value = node.try_get_context(parameter_name)
