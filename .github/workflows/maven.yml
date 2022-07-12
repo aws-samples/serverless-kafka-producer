@@ -20,8 +20,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-      with:
-        path: api-gateway-lambda-proxy
     - name: Display checkout
       run: tree
     - name: Set up JDK 11
