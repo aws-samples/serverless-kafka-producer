@@ -1,4 +1,5 @@
 # Apache Kafka publisher CDK Code
+[![Java CI with Maven](https://github.com/aws-samples/serverless-kafka-producer/actions/workflows/maven.yml/badge.svg)](https://github.com/aws-samples/serverless-kafka-producer/actions/workflows/maven.yml)
 
 This example walks you through how to build a serverless real-time stream producer application using Amazon API Gateway and AWS Lambda. 
 For testing, this blog includes a sample AWS Cloud Development Kit (CDK) application. This creates a demo environment, including an Amazon Managed Streaming for Apache Kafka (MSK) cluster and a bastion host for observing the produced messages on the cluster. The code is not meant for production workloads.
