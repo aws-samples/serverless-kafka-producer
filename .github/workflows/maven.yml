@@ -12,6 +12,7 @@ on:
     branches: [ "main" ]
     paths:
       - 'api-gateway-lambda-proxy/**'
+  workflow_dispatch:
       
 defaults:
       run:
