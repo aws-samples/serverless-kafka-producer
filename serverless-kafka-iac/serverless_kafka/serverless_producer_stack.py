@@ -188,7 +188,7 @@ class ServerlessKafkaProducerStack(Stack):
                 command=[
                     "/bin/sh",
                     "-c",
-                    "mvn clean install -q && cp /asset-input/target/ApiGatewayLambdaProxy.zip /asset-output/",
+                    "mvn clean install -q -Dmaven.test.skip=true && cp /asset-input/target/ApiGatewayLambdaProxy.zip /asset-output/",
                 ],
                 user="root",
                 output_type=BundlingOutput.ARCHIVED,
