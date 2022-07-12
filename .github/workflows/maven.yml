@@ -12,11 +12,18 @@ on:
     branches: [ "main" ]
     paths:
       - 'api-gateway-lambda-proxy/**'
+      
+defaults:
+      run:
+        working-directory: ./api-gateway-lambda-proxy
 
 jobs:
   build:
 
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./app
 
     steps:
     - uses: actions/checkout@v3
