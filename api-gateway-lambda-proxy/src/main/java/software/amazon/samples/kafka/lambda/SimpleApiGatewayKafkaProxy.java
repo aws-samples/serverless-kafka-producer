@@ -45,7 +45,6 @@ public class SimpleApiGatewayKafkaProxy implements RequestHandler<APIGatewayProx
             producer.flush();
 
             RecordMetadata metadata = send.get();
-            log.info(String.format("Send message was send to partition %s", metadata.partition()));
 
             log.info(String.format("Message was send to partition %s", metadata.partition()));
 
