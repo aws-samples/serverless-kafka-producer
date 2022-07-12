@@ -13,10 +13,7 @@ on:
     paths:
       - 'api-gateway-lambda-proxy/**'
   workflow_dispatch:
-      
-defaults:
-      run:
-        working-directory: ./api-gateway-lambda-proxy
+   
 
 jobs:
   build:
@@ -24,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./app
+        working-directory: ./api-gateway-lambda-proxy
 
     steps:
     - uses: actions/checkout@v3
