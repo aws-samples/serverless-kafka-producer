@@ -86,12 +86,6 @@ class ServerlessKafkaProducerStack(Stack):
             ),
         )
 
-        #prod_alias = f.Alias(
-        #    self, "prod-alias", alias_name="prod", version=_function.current_version
-        #)
-
-        #prod_alias.add_auto_scaling(min_capacity=20, max_capacity=60)
-
         rest_api = apig.RestApi(
             self,
             "messagesapiendpoint",
@@ -146,8 +140,6 @@ class ServerlessKafkaProducerStack(Stack):
         )
 
         l1_function:f.CfnFunction = function.node.default_child
-
-        #l1_function.add_property_override('snapStart.applyOn', 'PublishedVersions')
 
         l1_function.snap_start = snap_start_property
 

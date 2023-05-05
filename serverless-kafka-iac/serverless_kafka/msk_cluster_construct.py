@@ -31,7 +31,7 @@ class MSKCuster(Construct):
         self.kafka_security_group = kafka_security_group
 
     @property
-    def get_kafka_cluster(self) -> msk.CfnCluster:
+    def get_kafka_cluster(self) -> msk.CfnServerlessCluster:
         return self.kafka_cluster
 
     @property
@@ -53,7 +53,7 @@ class MSKCuster(Construct):
 
     def init_kafka_cluster(
         self, vpc_stack: ec2.IVpc, security_group: ec2.ISecurityGroup
-    ) -> msk.CfnCluster:
+    ) -> msk.CfnServerlessCluster:
 
         logs.LogGroup(self,"MSKExampleBrokerLogs", retention=logs.RetentionDays.ONE_DAY)
 
@@ -66,29 +66,21 @@ class MSKCuster(Construct):
             )
         )
 
-        kafka_cluster = msk.CfnCluster(
+        kafka_cluster = msk.CfnServerlessCluster(
             self,
             id="demo-cluster",
             cluster_name="demo-cluster",
-            kafka_version="2.6.2",
-            number_of_broker_nodes=3,
-            #logging_info=logging_info_property,
-            broker_node_group_info=msk.CfnCluster.BrokerNodeGroupInfoProperty(
-                instance_type="m5.xlarge",
-                storage_info=msk.CfnCluster.StorageInfoProperty(
-                    ebs_storage_info=msk.CfnCluster.EBSStorageInfoProperty(
-                        volume_size=100
-                    )
-                ),
-                client_subnets=vpc_stack.select_subnets(
+            vpc_configs=[msk.CfnServerlessCluster.VpcConfigProperty(
+                subnet_ids=vpc_stack.select_subnets(
                     subnet_type=ec2.SubnetType.PRIVATE_WITH_NAT
                 ).subnet_ids,
-                security_groups=[security_group.security_group_id],
-            ),
-            client_authentication=msk.CfnCluster.ClientAuthenticationProperty(
-                sasl=msk.CfnCluster.SaslProperty(
-                    iam=msk.CfnCluster.IamProperty(enabled=True),
-                    scram=msk.CfnCluster.ScramProperty(enabled=False),
+
+                # the properties below are optional
+                security_groups=[security_group.security_group_id]
+            )],
+            client_authentication=msk.CfnServerlessCluster.ClientAuthenticationProperty(
+                sasl=msk.CfnServerlessCluster.SaslProperty(
+                    iam=msk.CfnServerlessCluster.IamProperty(enabled=True),
                 )
             ),
         )
