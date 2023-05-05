@@ -5,7 +5,6 @@ import logging as log
 import os
 from pathlib import Path
 
-
 from aws_cdk import (BundlingOptions, BundlingOutput, DockerVolume, Duration,
                      Stack)
 from aws_cdk import aws_apigateway as apig
@@ -87,11 +86,11 @@ class ServerlessKafkaProducerStack(Stack):
             ),
         )
 
-        prod_alias = f.Alias(
-            self, "prod-alias", alias_name="prod", version=_function.current_version
-        )
+        #prod_alias = f.Alias(
+        #    self, "prod-alias", alias_name="prod", version=_function.current_version
+        #)
 
-        prod_alias.add_auto_scaling(min_capacity=20, max_capacity=60)
+        #prod_alias.add_auto_scaling(min_capacity=20, max_capacity=60)
 
         rest_api = apig.RestApi(
             self,
@@ -106,7 +105,7 @@ class ServerlessKafkaProducerStack(Stack):
                 authorization_type=apig.AuthorizationType.NONE
             ),
         )
-        rest_api.root.add_method("POST", apig.LambdaIntegration(prod_alias))
+        rest_api.root.add_method("POST", apig.LambdaIntegration(_function))
 
     def init_proxy_lambda(
         self,
@@ -119,12 +118,12 @@ class ServerlessKafkaProducerStack(Stack):
         function = f.Function(
             self,
             "KafkaProducer",
-            runtime=f.Runtime.JAVA_11,  # type: ignore
+            runtime=f.Runtime.JAVA_17,  # type: ignore
             handler="software.amazon.samples.kafka.lambda.SimpleApiGatewayKafkaProxy::handleRequest",
             timeout=Duration.seconds(LAMBDA_TIMEOUT_SECONDS),
             log_retention=logs.RetentionDays.ONE_DAY,
             code=self.build_mvn_package(),
-            tracing=f.Tracing.ACTIVE,
+            tracing=f.Tracing.DISABLED,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(
                 subnet_type=ec2.SubnetType.PRIVATE_WITH_NAT
@@ -141,7 +140,16 @@ class ServerlessKafkaProducerStack(Stack):
             },
             memory_size=1024,
         )
-        
+
+        snap_start_property = f.CfnFunction.SnapStartProperty(
+            apply_on="PublishedVersions"
+        )
+
+        l1_function:f.CfnFunction = function.node.default_child
+
+        #l1_function.add_property_override('snapStart.applyOn', 'PublishedVersions')
+
+        l1_function.snap_start = snap_start_property
 
         access_kafka_policy = iam.PolicyStatement(
             effect=iam.Effect.ALLOW,
