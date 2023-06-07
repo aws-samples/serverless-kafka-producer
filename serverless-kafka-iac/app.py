@@ -8,7 +8,10 @@ from aws_cdk import aws_ec2 as ec2
 
 from serverless_kafka.demo_stack import KafkaDemoBackendStack
 from serverless_kafka.helpers import get_paramter
-from serverless_kafka.serverless_producer_stack import ServerlessKafkaProducerStack
+from serverless_kafka.serverless_consumerstack import \
+    ServerlessKafkaConsumerStack
+from serverless_kafka.serverless_producer_stack import \
+    ServerlessKafkaProducerStack
 
 # CLI Options
 KAFKA_VPC_ID = "KAFKA_VPC_ID"
@@ -51,6 +54,18 @@ if mode == STANDALONE:
 serverless = ServerlessKafkaProducerStack(
     app,
     "ServerlessKafkaProducerStack",
+    kafka_vpc=kafka_vpc,
+    kafka_security_group=kafka_security_group,
+    msk_arn=msk_arn,
+    env=cdk.Environment(
+        account=os.getenv("CDK_DEFAULT_ACCOUNT"), region=os.getenv("CDK_DEFAULT_REGION")
+    ),
+    topic_name=get_paramter(app.node, TOPIC_NAME, 'messages')
+)
+
+serverless_consumer = ServerlessKafkaConsumerStack (
+     app,
+    "ServerlessKafkaConsumerStack",
     kafka_vpc=kafka_vpc,
     kafka_security_group=kafka_security_group,
     msk_arn=msk_arn,

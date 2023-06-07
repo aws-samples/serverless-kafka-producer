@@ -7,8 +7,7 @@ Topic 	        arn:aws:kafka:region:account-id:topic/cluster-name/cluster-uuid/t
 Group 	        arn:aws:kafka:region:account-id:group/cluster-name/cluster-uuid/group-name
 Transaction ID 	arn:aws:kafka:region:account-id:transactional-id/cluster-name/cluster-uuid/transactional-id
 """
-from typing import List
-from typing import Tuple
+from typing import List, Tuple
 
 from aws_cdk import Arn as arn
 from aws_cdk import ArnFormat as af

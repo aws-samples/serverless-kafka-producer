@@ -117,7 +117,7 @@ class ServerlessKafkaProducerStack(Stack):
             timeout=Duration.seconds(LAMBDA_TIMEOUT_SECONDS),
             log_retention=logs.RetentionDays.ONE_DAY,
             code=self.build_mvn_package(),
-            tracing=f.Tracing.DISABLED,
+            tracing=f.Tracing.ACTIVE,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(
                 subnet_type=ec2.SubnetType.PRIVATE_WITH_NAT
@@ -134,6 +134,7 @@ class ServerlessKafkaProducerStack(Stack):
             },
             memory_size=1024,
         )
+        
 
         snap_start_property = f.CfnFunction.SnapStartProperty(
             apply_on="PublishedVersions"
@@ -184,7 +185,7 @@ class ServerlessKafkaProducerStack(Stack):
         code = f.Code.from_asset(
             path=os.path.join("..", "api-gateway-lambda-proxy"),
             bundling=BundlingOptions(
-                image=f.Runtime.JAVA_11.bundling_image,
+                image=f.Runtime.JAVA_17.bundling_image,
                 command=[
                     "/bin/sh",
                     "-c",

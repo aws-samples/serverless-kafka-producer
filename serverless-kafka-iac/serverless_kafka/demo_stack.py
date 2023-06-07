@@ -11,6 +11,7 @@ from serverless_kafka.bastion_construct import BastionHost
 from serverless_kafka.msk_cluster_construct import MSKCuster
 from serverless_kafka.vpc_construct import KafkaVPCS
 
+
 log.basicConfig(level=log.INFO)
 
 
