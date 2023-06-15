@@ -68,11 +68,11 @@ class ServerlessKafkaConsumerStack(Stack):
         consumer_function = f.Function(
             self,
             "KafkaConsumer",
-            runtime=f.Runtime.JAVA_17,  # type: ignore
-            handler="aws.samples.kafka.lambdaconsumer.App::handleRequest",
+            runtime=f.Runtime.PYTHON_3_9,  # type: ignore
+            handler="app.lambda_handler",
             timeout=Duration.seconds(LAMBDA_TIMEOUT_SECONDS),
             log_retention=logs.RetentionDays.ONE_DAY,
-            code=self.build_mvn_package(),
+            code=f.Code.from_asset(path= '../serverless-kafka-iam-consumer'),
             tracing=f.Tracing.DISABLED,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(
@@ -117,28 +117,3 @@ class ServerlessKafkaConsumerStack(Stack):
         )
 
         consumer_function.add_to_role_policy(access_kafka_policy)
-
-        
-
-    def build_mvn_package(self):
-        home = str(Path.home())
-
-        log.info("Building Java Project using M2 home from")
-        m2_home = os.path.join(home, ".m2/")
-        log.info(f"M2_home={m2_home}")
-
-        code = f.Code.from_asset(
-            path=os.path.join("..", "serverless-kafka-iam-consumer"),
-            bundling=BundlingOptions(
-                image=f.Runtime.JAVA_17.bundling_image,
-                command=[
-                    "/bin/sh",
-                    "-c",
-                    "mvn clean install -q -Dmaven.test.skip=true && cp /asset-input/target/KafkaConsumer.zip /asset-output/",
-                ],
-                user="root",
-                output_type=BundlingOutput.ARCHIVED,
-                volumes=[DockerVolume(host_path=m2_home, container_path="/root/.m2/")],
-            ),
-        )
-        return code

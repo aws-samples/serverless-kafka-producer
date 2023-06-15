@@ -1,0 +1,3 @@
+json
+boto3
+aws-lambda-powertools
