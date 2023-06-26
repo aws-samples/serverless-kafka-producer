@@ -62,7 +62,13 @@ class BastionHost(Construct):
             security_group=kafka_bastion_host_security_group,
             machine_image=ec2.MachineImage.latest_amazon_linux(
                 generation=ec2.AmazonLinuxGeneration.AMAZON_LINUX_2
-            )
+            ),block_devices=[
+                ec2.BlockDevice(
+                device_name="/dev/xvda",
+                volume=ec2.BlockDeviceVolume.ebs(8,
+                    encrypted=True
+                ))
+            ]
         )
 
         output = CfnOutput(

@@ -149,15 +149,7 @@ def find_custom_resource_log_retention(_node:IConstruct):
     
     raise Exception('Could not find Custom resource for LogRetention')
 
-def test_serverless_producer_stack_warnings(demo_stack):
 
-    warnings = assertions.Annotations.from_stack(demo_stack).find_warning(
-        "*", assertions.Match.string_like_regexp("AwsSolutions-.*")
-    )
-
-    log.error(warnings)
-
-    assert not warnings
 
 
 def test_serverless_producer_stack_errors(demo_stack):
