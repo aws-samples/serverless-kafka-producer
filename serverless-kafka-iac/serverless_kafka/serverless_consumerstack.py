@@ -1,44 +1,34 @@
-# Copyright 2023 klosep
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
 
 import logging as log
 import os
-import uuid
 from pathlib import Path
 
 from aws_cdk import (BundlingOptions, BundlingOutput, DockerVolume, Duration,
-                     Names, Stack)
+                     Stack)
+from aws_cdk import aws_apigateway as apig
 from aws_cdk import aws_ec2 as ec2
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda as f
 from aws_cdk import aws_logs as logs
-from aws_cdk.aws_lambda_event_sources import ManagedKafkaEventSource
+from aws_cdk import custom_resources as cs
 from constructs import Construct
 
 from .helpers import get_group_name, get_paramter, get_topic_name
 
+log.basicConfig(level=log.INFO)
+
+# Template optional parameter
 P_RESERVED_CONCURRENCY = "P_RESERVED_CONCURRENCY"
 P_MAX_CONCURRENCY = "P_MAX_CONCURRENCY"
 
 LAMBDA_TIMEOUT_SECONDS = 15
 
-CUSTOM_RESOURCE_PHYISCAL_FUNCTION_NAME = "kafkaCLICallFunction"
-
-log.basicConfig(level=log.INFO)
+CUSTOM_RESOURCE_PHYISCAL_FUNCTION_NAME = 'kafkaCLICallFunction'
 
 
-class ServerlessKafkaConsumerStack(Stack):
+class ServerlessKafkaProducerStack(Stack):
     def __init__(
         self,
         scope: Construct,
@@ -48,72 +38,204 @@ class ServerlessKafkaConsumerStack(Stack):
         msk_arn: str,
         topic_name: str,
         **kwargs,
-    ):
+    ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        self.init_kafka_consumer_lambda(
-            vpc=kafka_vpc,
+        vpc = kafka_vpc
+
+        bootstrap_broker = self.get_bootstrap_server(msk_arn=msk_arn)
+
+        function = self.init_proxy_lambda(
+            vpc=vpc,
             kafka_security_groud=kafka_security_group,
+            bootstrap_broker=bootstrap_broker,
             msk_arn=msk_arn,
             topic_name=topic_name,
         )
 
-    def init_kafka_consumer_lambda(
+        self.init_api_gateway(function, vpc, kafka_security_group )  # type: ignore
+
+    def init_api_gateway(
+        self,
+        _function: f.IFunction,
+        vpc: ec2.IVpc,
+        kafka_security_groud: ec2.ISecurityGroup,
+    ):
+        """Creates the API Gateway endpoint
+
+        Args:
+            function (f.IFunction): Lambda backend funtion
+        """
+        vpc_endpoint = ec2.InterfaceVpcEndpoint(
+            self,
+            "apigatewayendpoint",
+            service=ec2.InterfaceVpcEndpointAwsService.APIGATEWAY,  # type: ignore
+            vpc=vpc,
+            subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_NAT),
+            private_dns_enabled=True,
+            security_groups=[kafka_security_groud],
+        )
+
+        rest_api_props = apig.RestApiProps(
+            rest_api_name="kafka-events-api",
+            deploy_options=apig.StageOptions(
+                logging_level=apig.MethodLoggingLevel.INFO, data_trace_enabled=True
+            ),
+            default_method_options=apig.MethodOptions(
+                authorization_type=apig.AuthorizationType.NONE
+            ),
+        )
+
+        rest_api = apig.RestApi(
+            self,
+            "messagesapiendpoint",
+            rest_api_name="kafka-events-api",
+            deploy_options=apig.StageOptions(
+                logging_level=apig.MethodLoggingLevel.INFO,
+                data_trace_enabled=True,
+                tracing_enabled=True,
+            ),
+            default_method_options=apig.MethodOptions(
+                authorization_type=apig.AuthorizationType.NONE
+            ),
+        )
+        rest_api.root.add_method("POST", apig.LambdaIntegration(_function))
+
+    def init_proxy_lambda(
         self,
         vpc: ec2.IVpc,
         kafka_security_groud: ec2.ISecurityGroup,
+        bootstrap_broker: str,
         msk_arn: str,
         topic_name: str,
     ):
-        consumer_function = f.Function(
+        
+        security_group = ec2.SecurityGroup(self, 'KafkaProducerSecurityGroup', allow_all_outbound=kafka_security_groud.allow_all_outbound, disable_inline_rules=kafka_security_groud.can_inline_rule, vpc=vpc)
+
+        security_group.connections.allow_from(kafka_security_groud, ec2.Port.tcp(9098), 'Allow from Kafka1')
+        security_group.connections.allow_from(kafka_security_groud, ec2.Port.tcp(2182), 'Allow from Kafka2')
+        security_group.connections.allow_from(kafka_security_groud, ec2.Port.tcp(2181), 'Allow from Kafka3')       
+        
+        
+        function = f.Function(
             self,
-            "KafkaConsumer",
-            runtime=f.Runtime.PYTHON_3_9,  # type: ignore
-            handler="app.lambda_handler",
+            "KafkaProducer",
+            runtime=f.Runtime.JAVA_17,  # type: ignore
+            handler="software.amazon.samples.kafka.lambda.SimpleApiGatewayKafkaProxy::handleRequest",
             timeout=Duration.seconds(LAMBDA_TIMEOUT_SECONDS),
             log_retention=logs.RetentionDays.ONE_DAY,
-            code=f.Code.from_asset(path= '../serverless-kafka-iam-consumer'),
-            tracing=f.Tracing.DISABLED,
+            code=self.build_mvn_package(),
+            tracing=f.Tracing.ACTIVE,
             vpc=vpc,
             vpc_subnets=ec2.SubnetSelection(
                 subnet_type=ec2.SubnetType.PRIVATE_WITH_NAT
             ),
-            security_groups=[kafka_security_groud],
+            security_groups=[security_group],
             reserved_concurrent_executions=get_paramter(
                 self.node, P_MAX_CONCURRENCY, 60
             ),
             environment={
+                "bootstrap_server": bootstrap_broker,
                 "JAVA_TOOL_OPTIONS": "-XX:+TieredCompilation -XX:TieredStopAtLevel=1",
                 "POWERTOOLS_LOG_LEVEL": "INFO",
-                "POWERTOOLS_SERVICE_NAME": "KafkaConsumer",
+                "POWERTOOLS_SERVICE_NAME": "KafkaProducer",
             },
             memory_size=1024,
         )
+        
 
-        consumer_group_id = str(uuid.uuid4())
-
-        consumer_function.add_event_source(
-            ManagedKafkaEventSource(
-                cluster_arn=msk_arn,
-                topic=topic_name,
-                batch_size=100,
-                consumer_group_id=consumer_group_id,
-                starting_position=f.StartingPosition.TRIM_HORIZON,
-            )
+        snap_start_property = f.CfnFunction.SnapStartProperty(
+            apply_on="PublishedVersions"
         )
+
+        l1_function:f.CfnFunction = function.node.default_child
+
+        l1_function.snap_start = snap_start_property
 
         access_kafka_policy = iam.PolicyStatement(
             effect=iam.Effect.ALLOW,
             actions=[
                 "kafka-cluster:Connect",
-                "kafka-cluster:DescribeGroup",
-                "kafka-cluster:AlterGroup",
-                "kafka-cluster:DescribeTopic",
-                "kafka-cluster:ReadData",
-                "kafka-cluster:ReadGroup",
-                "kafka-cluster:DescribeClusterDynamicConfiguration"
             ],
-            resources=[get_group_name(msk_arn, consumer_group_id), get_topic_name(msk_arn, 'messages'), msk_arn]
+            resources=[msk_arn],
         )
 
-        consumer_function.add_to_role_policy(access_kafka_policy)
+        admin_kafka_topics = iam.PolicyStatement(
+            effect=iam.Effect.ALLOW,
+            actions=[
+                "kafka-cluster:WriteData",
+                "kafka-cluster:DescribeTopic",
+            ],
+            resources=[
+                get_topic_name(kafka_cluster_arn=msk_arn, topic_name=topic_name)
+            ],
+        )
+
+        access_to_user_groups = iam.PolicyStatement(
+            effect=iam.Effect.ALLOW,
+            actions=["kafka-cluster:AlterGroup", "kafka-cluster:DescribeGroup"],
+            resources=[get_group_name(kafka_cluster_arn=msk_arn, group_name="*")],
+        )
+        function.add_to_role_policy(access_kafka_policy)
+        function.add_to_role_policy(admin_kafka_topics)
+        function.add_to_role_policy(access_to_user_groups)
+
+        return function
+
+    def build_mvn_package(self):
+
+        home = str(Path.home())
+
+        log.info("Building Java Project using M2 home from")
+        m2_home = os.path.join(home, ".m2/")
+        log.info(f"M2_home={m2_home}")
+
+        code = f.Code.from_asset(
+            path=os.path.join("..", "api-gateway-lambda-proxy"),
+            bundling=BundlingOptions(
+                image=f.Runtime.JAVA_17.bundling_image,
+                command=[
+                    "/bin/sh",
+                    "-c",
+                    "mvn clean install -q -Dmaven.test.skip=true && cp /asset-input/target/ApiGatewayLambdaProxy.zip /asset-output/",
+                ],
+                user="root",
+                output_type=BundlingOutput.ARCHIVED,
+                volumes=[DockerVolume(host_path=m2_home, container_path="/root/.m2/")],
+            ),
+        )
+        return code
+
+    def get_bootstrap_server(self, msk_arn: str):
+
+        
+        sdk_call = cs.AwsSdkCall(
+            service="Kafka",
+            action="getBootstrapBrokers",  # aws kafka get-bootstrap-brokers --cluster-arn {kafka_cluster_arn} --query "BootstrapBrokerStringSaslIam" --region {region})
+            parameters={"ClusterArn": msk_arn},
+            region=self.region,
+            physical_resource_id=cs.PhysicalResourceId.of(
+                f"csgetbootstrapbrokers{msk_arn}"
+            ),
+        )
+        cs.PhysicalResourceId.of
+        kafka_cli_call = cs.AwsCustomResource(
+            self,
+            "kafkaclicall",
+            function_name=CUSTOM_RESOURCE_PHYISCAL_FUNCTION_NAME,
+            on_create=sdk_call,
+            log_retention=logs.RetentionDays.ONE_DAY,
+            install_latest_aws_sdk=True,
+            policy=cs.AwsCustomResourcePolicy.from_sdk_calls(
+                resources=[msk_arn]
+            ),
+            timeout=Duration.minutes(2),
+        )
+
+        boot_strap_broker = kafka_cli_call.get_response_field(
+            "BootstrapBrokerStringSaslIam"
+        )
+
+        log.info("Kafka bootstrap broker url %s", boot_strap_broker)
+
+        return kafka_cli_call.get_response_field("BootstrapBrokerStringSaslIam")

@@ -53,7 +53,7 @@ class ServerlessKafkaProducerStack(Stack):
             topic_name=topic_name,
         )
 
-        self.init_api_gateway(function, vpc, kafka_security_group)  # type: ignore
+        self.init_api_gateway(function, vpc, kafka_security_group )  # type: ignore
 
     def init_api_gateway(
         self,
@@ -109,6 +109,14 @@ class ServerlessKafkaProducerStack(Stack):
         msk_arn: str,
         topic_name: str,
     ):
+        
+        security_group = ec2.SecurityGroup(self, 'KafkaProducerSecurityGroup', allow_all_outbound=kafka_security_groud.allow_all_outbound, disable_inline_rules=kafka_security_groud.can_inline_rule, vpc=vpc)
+
+        security_group.connections.allow_from(kafka_security_groud, ec2.Port.tcp(9098), 'Allow from Kafka1')
+        security_group.connections.allow_from(kafka_security_groud, ec2.Port.tcp(2182), 'Allow from Kafka2')
+        security_group.connections.allow_from(kafka_security_groud, ec2.Port.tcp(2181), 'Allow from Kafka3')       
+        
+        
         function = f.Function(
             self,
             "KafkaProducer",
@@ -122,7 +130,7 @@ class ServerlessKafkaProducerStack(Stack):
             vpc_subnets=ec2.SubnetSelection(
                 subnet_type=ec2.SubnetType.PRIVATE_WITH_NAT
             ),
-            security_groups=[kafka_security_groud],
+            security_groups=[security_group],
             reserved_concurrent_executions=get_paramter(
                 self.node, P_MAX_CONCURRENCY, 60
             ),
