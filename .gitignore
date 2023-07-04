@@ -1,0 +1,8 @@
+.vscode/
+cdk.context.json
+cdk.out/
+.venv/
+target/
+__pycache__/
+api-gateway-lambda-proxy/?/.m2/
+api-gateway-lambda-proxy/target/
