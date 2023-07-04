@@ -8,7 +8,7 @@ from aws_cdk import aws_ec2 as ec2
 
 from serverless_kafka.demo_stack import KafkaDemoBackendStack
 from serverless_kafka.helpers import get_paramter
-from serverless_kafka.serverless_consumerstack import \
+from serverless_kafka.serverless_consumer_stack import \
     ServerlessKafkaConsumerStack
 from serverless_kafka.serverless_producer_stack import \
     ServerlessKafkaProducerStack

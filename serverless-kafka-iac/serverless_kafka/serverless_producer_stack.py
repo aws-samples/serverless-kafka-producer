@@ -47,7 +47,7 @@ class ServerlessKafkaProducerStack(Stack):
 
         function = self.init_proxy_lambda(
             vpc=vpc,
-            kafka_security_groud=kafka_security_group,
+            kafka_security_group=kafka_security_group,
             bootstrap_broker=bootstrap_broker,
             msk_arn=msk_arn,
             topic_name=topic_name,
@@ -59,7 +59,7 @@ class ServerlessKafkaProducerStack(Stack):
         self,
         _function: f.IFunction,
         vpc: ec2.IVpc,
-        kafka_security_groud: ec2.ISecurityGroup,
+        kafka_security_group: ec2.ISecurityGroup,
     ):
         """Creates the API Gateway endpoint
 
@@ -73,7 +73,7 @@ class ServerlessKafkaProducerStack(Stack):
             vpc=vpc,
             subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_NAT),
             private_dns_enabled=True,
-            security_groups=[kafka_security_groud],
+            security_groups=[kafka_security_group],
         )
 
         rest_api_props = apig.RestApiProps(
@@ -104,17 +104,17 @@ class ServerlessKafkaProducerStack(Stack):
     def init_proxy_lambda(
         self,
         vpc: ec2.IVpc,
-        kafka_security_groud: ec2.ISecurityGroup,
+        kafka_security_group: ec2.ISecurityGroup,
         bootstrap_broker: str,
         msk_arn: str,
         topic_name: str,
     ):
         
-        security_group = ec2.SecurityGroup(self, 'KafkaProducerSecurityGroup', allow_all_outbound=kafka_security_groud.allow_all_outbound, disable_inline_rules=kafka_security_groud.can_inline_rule, vpc=vpc)
+        producer_security_group = ec2.SecurityGroup(self, 'KafkaProducerSecurityGroup', allow_all_outbound=kafka_security_group.allow_all_outbound, disable_inline_rules=kafka_security_group.can_inline_rule, vpc=vpc)
 
-        security_group.connections.allow_from(kafka_security_groud, ec2.Port.tcp(9098), 'Allow from Kafka1')
-        security_group.connections.allow_from(kafka_security_groud, ec2.Port.tcp(2182), 'Allow from Kafka2')
-        security_group.connections.allow_from(kafka_security_groud, ec2.Port.tcp(2181), 'Allow from Kafka3')       
+        producer_security_group.connections.allow_from(kafka_security_group, ec2.Port.tcp(9098), 'Allow port 9098 from MSK Serverless cluster security group')
+        producer_security_group.connections.allow_from(kafka_security_group, ec2.Port.tcp(2182), 'Allow port 2182 from MSK Serverless cluster security group')
+        producer_security_group.connections.allow_from(kafka_security_group, ec2.Port.tcp(2181), 'Allow port 2181 from MSK Serverless cluster security group')       
         
         
         function = f.Function(
@@ -130,7 +130,7 @@ class ServerlessKafkaProducerStack(Stack):
             vpc_subnets=ec2.SubnetSelection(
                 subnet_type=ec2.SubnetType.PRIVATE_WITH_NAT
             ),
-            security_groups=[security_group],
+            security_groups=[producer_security_group],
             reserved_concurrent_executions=get_paramter(
                 self.node, P_MAX_CONCURRENCY, 60
             ),
